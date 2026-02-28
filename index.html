@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 Progress</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #000;
+    --accent: #00ff87;
+    --accent2: #ff2d6b;
+    --accent3: #ffd700;
+    --text: #fff;
+    --dim: rgba(255,255,255,0.15);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.3;
+  }
+
+  /* Animated grid background */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,255,135,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,135,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridPulse 4s ease-in-out infinite;
+  }
+
+  @keyframes gridPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  /* Scanning line */
+  .scan-line {
+    position: fixed;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scan 4s linear infinite;
+    opacity: 0.4;
+    z-index: 99;
+  }
+
+  @keyframes scan {
+    0% { top: -2px; }
+    100% { top: 100vh; }
+  }
+
+  .container {
+    width: 100%;
+    max-width: 420px;
+    padding: 24px 20px;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 100vh;
+    justify-content: center;
+  }
+
+  /* Header */
+  .year-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(80px, 22vw, 120px);
+    line-height: 0.85;
+    letter-spacing: -2px;
+    color: transparent;
+    -webkit-text-stroke: 2px var(--accent);
+    position: relative;
+    animation: flicker 6s ease-in-out infinite;
+  }
+
+  .year-label span {
+    color: var(--accent);
+    -webkit-text-stroke: 0;
+    animation: colorShift 3s ease-in-out infinite;
+  }
+
+  @keyframes colorShift {
+    0%, 100% { color: var(--accent); }
+    50% { color: var(--accent3); }
+  }
+
+  @keyframes flicker {
+    0%, 96%, 100% { opacity: 1; }
+    97% { opacity: 0.6; }
+    98% { opacity: 1; }
+    99% { opacity: 0.7; }
+  }
+
+  .subtitle {
+    font-size: 11px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-top: -8px;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-box {
+    border: 1px solid rgba(0,255,135,0.2);
+    padding: 12px 8px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    background: rgba(0,255,135,0.03);
+    animation: statFadeIn 0.6s ease both;
+  }
+
+  .stat-box::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,255,135,0.05), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .stat-box:hover::before { opacity: 1; }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--accent);
+    line-height: 1;
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 8px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--dim);
+    display: block;
+    margin-top: 3px;
+  }
+
+  /* Progress section */
+  .progress-section {
+    position: relative;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+
+  .progress-label {
+    font-size: 9px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .progress-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    line-height: 1;
+    color: var(--accent3);
+    animation: pctPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pctPulse {
+    0%, 100% { text-shadow: 0 0 20px rgba(255,215,0,0.3); }
+    50% { text-shadow: 0 0 40px rgba(255,215,0,0.7), 0 0 80px rgba(255,215,0,0.2); }
+  }
+
+  .progress-bar-wrap {
+    height: 28px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    position: relative;
+    transition: width 2s cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: 0 0 20px rgba(0,255,135,0.5);
+  }
+
+  .progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 40px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4));
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Tick marks */
+  .ticks {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+  .tick {
+    font-size: 7px;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 1px;
+  }
+
+  /* Date display */
+  .date-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255,45,107,0.3);
+    background: rgba(255,45,107,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .date-display::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent2);
+    box-shadow: 0 0 10px var(--accent2);
+  }
+
+  .date-icon {
+    font-size: 20px;
+    animation: spin 10s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .date-text {
+    flex: 1;
+  }
+
+  .date-today {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+  }
+
+  .date-sub {
+    font-size: 8px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* Time left */
+  .time-left-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .time-block {
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 12px;
+    background: rgba(255,255,255,0.02);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .time-block .big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 38px;
+    line-height: 1;
+    display: block;
+    color: var(--text);
+    transition: color 0.3s;
+  }
+
+  .time-block:hover .big { color: var(--accent); }
+
+  .time-block .small {
+    font-size: 8px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    display: block;
+  }
+
+  .time-block .tag {
+    position: absolute;
+    top: 8px; right: 8px;
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 2px 5px;
+  }
+
+  /* Scrolling quote section */
+  .quote-section {
+    overflow: hidden;
+    position: relative;
+    border-top: 1px solid rgba(0,255,135,0.15);
+    border-bottom: 1px solid rgba(0,255,135,0.15);
+    padding: 16px 0;
+    height: 90px;
+  }
+
+  .quote-container {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .quote-text {
+    position: absolute;
+    width: 100%;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(18px, 5vw, 22px);
+    line-height: 1.3;
+    letter-spacing: 1px;
+    text-align: center;
+    padding: 0 10px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    color: var(--text);
+  }
+
+  .quote-text.active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .quote-text.exit {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  .quote-author {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-top: 4px;
+  }
+
+  /* Pause hint */
+  .pause-hint {
+    text-align: center;
+    font-size: 8px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* Bottom watermark */
+  .watermark {
+    text-align: center;
+    font-size: 8px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+  }
+
+  /* Glitch effect on year */
+  @keyframes glitch {
+    0% { clip-path: inset(0 0 95% 0); transform: translate(-2px, 0); }
+    5% { clip-path: inset(30% 0 60% 0); transform: translate(2px, 0); }
+    10% { clip-path: inset(60% 0 30% 0); transform: translate(-1px, 0); }
+    15% { clip-path: inset(90% 0 5% 0); transform: translate(1px, 0); }
+    20%, 100% { clip-path: inset(0 0 0 0); transform: translate(0, 0); }
+  }
+
+  .glitch-wrap {
+    position: relative;
+  }
+
+  .glitch-wrap::before,
+  .glitch-wrap::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(80px, 22vw, 120px);
+    line-height: 0.85;
+    letter-spacing: -2px;
+  }
+
+  .glitch-wrap::before {
+    color: var(--accent2);
+    animation: glitch 5s infinite 0.5s;
+    opacity: 0.6;
+    left: 2px;
+  }
+
+  .glitch-wrap::after {
+    color: #00bfff;
+    animation: glitch 5s infinite 0.8s;
+    opacity: 0.4;
+    left: -2px;
+  }
+
+  /* Days remaining bar */
+  .days-remaining {
+    padding: 10px 14px;
+    background: rgba(255,215,0,0.04);
+    border: 1px solid rgba(255,215,0,0.15);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .dr-label {
+    font-size: 8px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .dr-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--accent3);
+  }
+
+  .dr-unit {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,215,0,0.5);
+  }
+
+  /* Live dot */
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 8px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+    animation: livePulse 1s ease-in-out infinite;
+  }
+
+  @keyframes livePulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.7; }
+  }
+
+  @media (max-height: 750px) {
+    .container { gap: 14px; }
+    .year-label { font-size: 70px; }
+    .quote-section { height: 80px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="scan-line"></div>
+
+<div class="container">
+
+  <!-- Live indicator -->
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      <span>Live tracking</span>
+    </div>
+    <div class="live-indicator">
+      <span id="clock"></span>
+    </div>
+  </div>
+
+  <!-- Year header -->
+  <div>
+    <div class="glitch-wrap" data-text="2026">
+      <div class="year-label"><span>20</span>26</div>
+    </div>
+    <div class="subtitle">Year in progress</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <span class="stat-num" id="daysGone">0</span>
+      <span class="stat-label">Days<br>Gone</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-num" id="weeksGone">0</span>
+      <span class="stat-label">Weeks<br>Gone</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-num" id="monthsGone">0</span>
+      <span class="stat-label">Months<br>Gone</span>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-section">
+    <div class="progress-header">
+      <span class="progress-label">Year Loading...</span>
+      <span class="progress-pct" id="pct">0%</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="bar" style="width:0%"></div>
+    </div>
+    <div class="ticks">
+      <span class="tick">JAN</span>
+      <span class="tick">APR</span>
+      <span class="tick">JUL</span>
+      <span class="tick">OCT</span>
+      <span class="tick">DEC</span>
+    </div>
+  </div>
+
+  <!-- Date -->
+  <div class="date-display">
+    <div class="date-icon">◈</div>
+    <div class="date-text">
+      <div class="date-today" id="dateStr">-</div>
+      <div class="date-sub">Today's checkpoint</div>
+    </div>
+  </div>
+
+  <!-- Time remaining -->
+  <div class="time-left-row">
+    <div class="time-block">
+      <span class="tag">LEFT</span>
+      <span class="big" id="daysLeft">0</span>
+      <span class="small">Days remaining</span>
+    </div>
+    <div class="time-block">
+      <span class="tag">LEFT</span>
+      <span class="big" id="weeksLeft">0</span>
+      <span class="small">Weeks remaining</span>
+    </div>
+  </div>
+
+  <!-- Days remaining callout -->
+  <div class="days-remaining">
+    <span class="dr-label">Hours left in 2026</span>
+    <div style="text-align:right;">
+      <span class="dr-num" id="hoursLeft">0</span>
+      <span class="dr-unit"> hrs</span>
+    </div>
+  </div>
+
+  <!-- Scrolling quote -->
+  <div class="quote-section">
+    <div class="quote-container" id="quoteContainer">
+      <div class="quote-text active" id="quoteDisplay"></div>
+    </div>
+  </div>
+
+  <div class="pause-hint">⏸ pause to read · share to inspire</div>
+
+  <div class="watermark">◈ 2026 tracker ◈</div>
+
+</div>
+
+<script>
+const quotes = [
+  { text: "THE YEAR IS NOT WAITING FOR YOU — ARE YOU MOVING?", author: "— anonymous" },
+  { text: "EVERY DAY THAT PASSES IS A DAY YOU CAN'T GET BACK.", author: "— time" },
+  { text: "YOUR FUTURE SELF IS WATCHING YOU RIGHT NOW.", author: "— reflection" },
+  { text: "THE CLOCK DOESN'T STOP FOR DOUBT. NEITHER SHOULD YOU.", author: "— momentum" },
+  { text: "YOU HAVE MORE DAYS LEFT THAN YOU THINK — USE THEM.", author: "— perspective" },
+  { text: "DISCIPLINE IS JUST REMEMBERING WHAT YOU WANT MOST.", author: "— focus" },
+  { text: "STOP WAITING FOR THE RIGHT MOMENT. THIS IS IT.", author: "— urgency" },
+  { text: "SMALL DAILY ACTIONS BECOME THE YEAR'S BIGGEST WINS.", author: "— consistency" },
+  { text: "THE WORLD REWARDS THOSE WHO REFUSE TO QUIT.", author: "— grind" },
+  { text: "YOU ARE NOT BEHIND. YOU ARE EXACTLY WHERE YOU START.", author: "— today" },
+  { text: "WHAT WILL YOUR DECEMBER SELF THANK YOUR TODAY SELF FOR?", author: "— vision" },
+  { text: "PROGRESS IS NOT ALWAYS VISIBLE. KEEP BUILDING ANYWAY.", author: "— patience" },
+  { text: "ONE PERCENT BETTER EVERY DAY CHANGES EVERYTHING.", author: "— compound effect" },
+  { text: "TIME IS THE ONE RESOURCE YOU CANNOT EARN BACK.", author: "— reality" },
+  { text: "THE GAP BETWEEN WHERE YOU ARE AND WHERE YOU WANT TO BE IS CALLED WORK.", author: "— truth" },
+];
+
+function calcStats() {
+  const now = new Date();
+  const start = new Date(2026, 0, 1);
+  const end = new Date(2026, 11, 31, 23, 59, 59);
+  const total = end - start;
+  const elapsed = now - start;
+  const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+
+  const dayOfYear = Math.floor((now - start) / 86400000) + 1;
+  const daysInYear = 365;
+
+  return {
+    pct: pct.toFixed(1),
+    daysGone: Math.max(0, dayOfYear - 1),
+    weeksGone: Math.floor(Math.max(0, dayOfYear - 1) / 7),
+    monthsGone: now.getMonth(),
+    daysLeft: daysInYear - dayOfYear + 1,
+    weeksLeft: Math.ceil((daysInYear - dayOfYear + 1) / 7),
+    hoursLeft: Math.floor((end - now) / 3600000),
+    dateStr: now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase(),
+    timeStr: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  };
+}
+
+function update() {
+  const s = calcStats();
+  document.getElementById('pct').textContent = s.pct + '%';
+  document.getElementById('bar').style.width = s.pct + '%';
+  document.getElementById('daysGone').textContent = s.daysGone;
+  document.getElementById('weeksGone').textContent = s.weeksGone;
+  document.getElementById('monthsGone').textContent = s.monthsGone;
+  document.getElementById('daysLeft').textContent = s.daysLeft;
+  document.getElementById('weeksLeft').textContent = s.weeksLeft;
+  document.getElementById('hoursLeft').textContent = s.hoursLeft.toLocaleString();
+  document.getElementById('dateStr').textContent = s.dateStr;
+  //document.getElementById('clock').textContent = s.timeStr;
+}
+
+// Quotes rotation
+let currentQuote = 0;
+let quoteEl = document.getElementById('quoteDisplay');
+
+function showQuote(index) {
+  const q = quotes[index];
+  quoteEl.classList.remove('active');
+  quoteEl.classList.add('exit');
+  setTimeout(() => {
+    quoteEl.innerHTML = q.text + '<span class="quote-author">' + q.author + '</span>';
+    quoteEl.classList.remove('exit');
+    quoteEl.classList.add('active');
+  }, 600);
+}
+
+// Init first quote
+quoteEl.innerHTML = quotes[0].text + '<span class="quote-author">' + quotes[0].author + '</span>';
+
+setInterval(() => {
+  currentQuote = (currentQuote + 1) % quotes.length;
+  showQuote(currentQuote);
+}, 3500);
+
+// Init + live updates
+update();
+setInterval(update, 1000);
+
+// Animate bar in on load
+setTimeout(() => {
+  const s = calcStats();
+  document.getElementById('bar').style.width = s.pct + '%';
+}, 300);
+</script>
+</body>
+</html>
